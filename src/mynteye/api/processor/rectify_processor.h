@@ -86,12 +86,12 @@ class RectifyProcessor : public Processor {
 
   void stereoRectify(models::CameraPtr leftOdo,
       models::CameraPtr rightOdo, const Mat& K1, const Mat& K2,
-      const Mat& D1, const Mat& D2, CvSize imageSize,
+      const Mat& D1, const Mat& D2, Size imageSize,
       const Mat& matR, const Mat& matT,
       Mat& _R1, Mat& _R2, Mat& _P1, Mat& _P2, double* T_mul_f,
       double *cx1_min_cx2,
       int flags = cv::CALIB_ZERO_DISPARITY, double alpha = -1,
-      CvSize newImgSize = cv::Size());
+      Size newImgSize = cv::Size());
 
 // Eigen::Matrix4d loadT(const mynteye::Extrinsics& in);
 // subEigen

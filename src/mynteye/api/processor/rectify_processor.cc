@@ -40,11 +40,11 @@ cv::Mat RectifyProcessor::rectifyrad(const cv::Mat& R) {
 
 void RectifyProcessor::stereoRectify(models::CameraPtr leftOdo,
     models::CameraPtr rightOdo, const Mat& K1, const Mat& K2,
-    const Mat& D1, const Mat& D2, CvSize imageSize,
+    const Mat& D1, const Mat& D2, Size imageSize,
     const Mat& matR, const Mat& matT,
     Mat& _R1, Mat& _R2, Mat& _P1, Mat& _P2, double* T_mul_f,
     double *cx1_min_cx2,
-    int flags, double alpha, CvSize newImgSize) {
+    int flags, double alpha, Size newImgSize) {
   // std::cout << _alpha << std::endl;
   alpha = _alpha;
   double _om[3], _t[3] = {0}, _uu[3]={0, 0, 0}, _r_r[3][3], _pp[3][4];
