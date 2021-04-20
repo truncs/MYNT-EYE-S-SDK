@@ -28,6 +28,10 @@
 
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/types_c.h>
+#include "opencv2/core/core_c.h"
+#include <opencv2/opencv.hpp>
+using namespace cv;
 
 MYNTEYE_BEGIN_NAMESPACE
 
@@ -81,10 +85,10 @@ class RectifyProcessor : public Processor {
   cv::Mat rectifyrad(const cv::Mat& R);
 
   void stereoRectify(models::CameraPtr leftOdo,
-      models::CameraPtr rightOdo, const CvMat* K1, const CvMat* K2,
-      const CvMat* D1, const CvMat* D2, CvSize imageSize,
-      const CvMat* matR, const CvMat* matT,
-      CvMat* _R1, CvMat* _R2, CvMat* _P1, CvMat* _P2, double* T_mul_f,
+      models::CameraPtr rightOdo, const Mat& K1, const Mat& K2,
+      const Mat& D1, const Mat& D2, CvSize imageSize,
+      const Mat& matR, const Mat& matT,
+      Mat& _R1, Mat& _R2, Mat& _P1, Mat& _P2, double* T_mul_f,
       double *cx1_min_cx2,
       int flags = cv::CALIB_ZERO_DISPARITY, double alpha = -1,
       CvSize newImgSize = cv::Size());
