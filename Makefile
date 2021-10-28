@@ -30,7 +30,6 @@ MKFILE_DIR := $(patsubst %/,%,$(dir $(MKFILE_PATH)))
 
 SUDO ?= sudo
 CMAKE_BUILD_EXTRA_OPTIONS ?=
-
 .DEFAULT_GOAL := all
 
 help:
@@ -182,7 +181,7 @@ $(PBCVT_DIR):
 pbcvt: $(PBCVT_DIR)
 	@$(call cmake_build,$(PBCVT_DIR)/_build,.., \
 		-DCMAKE_INSTALL_PREFIX=$(MKFILE_DIR)/wrappers/python/_install \
-		-DPYTHON_DESIRED_VERSION=2.X)
+		-DPYTHON_DESIRED_VERSION=3.X)
 	@cd $(PBCVT_DIR)/_build; make install
 
 .PHONY: pbcvt
@@ -194,9 +193,18 @@ $(NPCV_DIR):
 
 py: python
 
+PYTHON_INCLUDE_DIR := $$(\
+	python -c "from distutils.sysconfig import get_python_inc;\
+	 print(get_python_inc())")
+PYTHON_LIBRARY := $$(\
+	python -c "import distutils.sysconfig as sysconfig;\
+	 print(sysconfig.get_config_var('LIBDIR'))")
+
 python: install $(NPCV_DIR)
 	@$(call echo,Make $@)
-	@$(call cmake_build,./wrappers/python/_build)
+	@$(call cmake_build,./wrappers/python/_build,..,\
+	-DPYTHON_INCLUDE_DIR=$(PYTHON_INCLUDE_DIR),\
+	-DPYTHON_LIBRARY=$(PYTHON_LIBRARY))
 	@cd ./wrappers/python/_build; make install
 
 .PHONY: py python
@@ -258,5 +266,7 @@ host:
 	@echo CMAKE: $(CMAKE)
 	@echo PKGNAME: $(PKGNAME)
 	@echo CMAKE_BUILD_EXTRA_OPTIONS: $(CMAKE_BUILD_EXTRA_OPTIONS)
+	@echo PYTHON_INCLUDE_DIR: $(PYTHON_INCLUDE_DIR)
+	@echo PYTHON_LIBRARY: $(PYTHON_LIBRARY)
 
 .PHONY: host
