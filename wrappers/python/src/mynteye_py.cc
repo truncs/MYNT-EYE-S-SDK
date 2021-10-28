@@ -26,6 +26,7 @@
 
 #include "mynteye/logger.h"
 #include "mynteye/api/api.h"
+#include "mynteye/device/device.h"
 #include "mynteye/device/utils.h"
 
 #include "array_indexing_suite.hpp"
@@ -110,14 +111,34 @@ struct MYNTEYE_API MotionData {
 
 class MYNTEYE_API APIWrap : public API {
  public:
-  explicit APIWrap(std::shared_ptr<Device> device) : API(device) {}
+  explicit APIWrap(std::shared_ptr<Device> device, CalibrationModel calib_model) : API(device, calib_model) {}
   ~APIWrap() {}
+
+  static std::shared_ptr<APIWrap> Create(const std::shared_ptr<Device> &device) {
+      std::shared_ptr<APIWrap> api = nullptr;
+      if (device != nullptr) {
+          bool in_l_ok, in_r_ok;
+          auto left_intr  = device->GetIntrinsics(Stream::LEFT, &in_l_ok);
+          auto right_intr = device->GetIntrinsics(Stream::RIGHT, &in_r_ok);
+
+          if (left_intr->calib_model() != right_intr->calib_model()) {
+              LOG(ERROR) << "left camera and right camera use different calib models!";
+              LOG(WARNING) << "use pinhole as default";
+              api = std::make_shared<APIWrap>(device, CalibrationModel::UNKNOW);
+          } else {
+              api = std::make_shared<APIWrap>(device, left_intr->calib_model());
+          }
+      } else {
+          LOG(ERROR) << "no device!";
+      }
+      return api;
+  }
 
   static std::shared_ptr<APIWrap> Create() {
     auto &&device = device::select();
     if (!device)
       return nullptr;
-    return std::make_shared<APIWrap>(device);
+    return Create(device);
   }
 
   static std::shared_ptr<APIWrap> Create(int argc, char *argv[]) {
@@ -125,7 +146,7 @@ class MYNTEYE_API APIWrap : public API {
     auto &&device = device::select();
     if (!device)
       return nullptr;
-    return std::make_shared<APIWrap>(device);
+    return Create(device);
   }
 
   python::StreamData GetStreamData(const Stream &stream) {
@@ -403,10 +424,14 @@ BOOST_PYTHON_MODULE(mynteye_py) {
 
   python::StreamData (APIWrap::*get_stream_data)(const Stream &) =
       &APIWrap::GetStreamData;
+  void (APIWrap::*config_stream_requests)(const StreamRequest &) =
+      &APIWrap::ConfigStreamRequest;
   std::vector<python::StreamData> (APIWrap::*get_stream_datas)(const Stream &) =
       &APIWrap::GetStreamDatas;
   std::vector<python::MotionData> (APIWrap::*get_motion_datas)() =
       &APIWrap::GetMotionDatas;
+  void (APIWrap::*set_option_value)(const Option &, std::int32_t) =
+      &APIWrap::SetOptionValue;
 
   bp::class_<APIWrap, boost::noncopyable>("API", bp::no_init)
       .def("create", api_create_1)
@@ -417,19 +442,19 @@ BOOST_PYTHON_MODULE(mynteye_py) {
       .def("supports", supports_capabilities)
       .def("supports", supports_option)
       .def("supports", supports_addons)
-      .def(
-          "get_stream_requests", &APIWrap::GetStreamRequests,
-          bp::return_value_policy<bp::reference_existing_object>())
-      .def("config_stream_request", &APIWrap::ConfigStreamRequest)
-      .def("get_info", &APIWrap::GetInfo)
-      .def("get_intrinsics", &APIWrap::GetIntrinsics)
+      // .def(
+      //     "get_stream_requests", &APIWrap::GetStreamRequests,
+      //     bp::return_value_policy<bp::reference_existing_object>())
+      .def("config_stream_request", config_stream_requests)
+      // .def("get_info", get_info)
+      // .def("get_intrinsics", &APIWrap::GetIntrinsics)
       .def("get_extrinsics", &APIWrap::GetExtrinsics)
       .def("get_motion_intrinsics", &APIWrap::GetMotionIntrinsics)
       .def("get_motion_extrinsics", &APIWrap::GetMotionExtrinsics)
       .def("log_option_infos", &APIWrap::LogOptionInfos)
       .def("get_option_info", &APIWrap::GetOptionInfo)
       .def("get_option_value", &APIWrap::GetOptionValue)
-      .def("set_option_value", &APIWrap::SetOptionValue)
+      .def("set_option_value", set_option_value)
       .def("run_option_action", &APIWrap::RunOptionAction)
       // .def("set_stream_callback", &APIWrap::SetStreamCallback)
       // .def("set_motion_callback", &APIWrap::SetMotionCallback)
@@ -438,8 +463,8 @@ BOOST_PYTHON_MODULE(mynteye_py) {
       .def("start", &APIWrap::Start)
       .def("stop", &APIWrap::Stop)
       .def("wait_for_streams", &APIWrap::WaitForStreams)
-      .def("enable_stream_data", &APIWrap::EnableStreamData)
-      .def("disable_stream_data", &APIWrap::DisableStreamData)
+      // .def("enable_stream_data", &APIWrap::EnableStreamData)
+      // .def("disable_stream_data", &APIWrap::DisableStreamData)
       .def("get_stream_data", get_stream_data)
       .def("get_stream_datas", get_stream_datas)
       .def(
